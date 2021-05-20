@@ -1,0 +1,1 @@
+export { useSlatePlaceholdersExtension } from './slatePlaceholdersExtension';

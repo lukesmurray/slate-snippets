@@ -1,0 +1,19 @@
+/* apply a natural box layout model to all elements, but allowing components to change */
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+[data-slate-editor='true'] {
+  background-color: #f7f7f7;
+  max-width: 65ch;
+  margin: auto;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
