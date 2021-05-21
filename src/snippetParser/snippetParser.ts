@@ -5,6 +5,7 @@
 
 // from https://github.com/microsoft/vscode/blob/main/src/vs/editor/contrib/snippet/snippetParser.ts
 
+import { Descendant } from 'slate';
 import { CharCode } from './charCode';
 
 export const enum TokenType {
@@ -184,6 +185,13 @@ export abstract class Marker {
     return this.children.reduce((prev, cur) => prev + cur.toString(), '');
   }
 
+  toFragment(): Descendant[] {
+    return this.children.reduce((prev, cur) => {
+      prev.push(...cur.toFragment());
+      return prev;
+    }, [] as Descendant[]);
+  }
+
   abstract toTextmateString(): string;
 
   len(): number {
@@ -204,6 +212,11 @@ export class Text extends Marker {
   toString() {
     return this.value;
   }
+
+  toFragment() {
+    return [{ text: this.value }];
+  }
+
   toTextmateString(): string {
     return Text.escape(this.value);
   }
@@ -278,6 +291,10 @@ export class Placeholder extends TransformableMarker {
     ret._children = this.children.map(child => child.clone());
     return ret;
   }
+
+  toFragment() {
+    return [{ text: '\uFEFF' }, ...super.toFragment(), { text: '\uFEFF' }];
+  }
 }
 
 export class Choice extends Marker {
@@ -293,6 +310,10 @@ export class Choice extends Marker {
 
   toString() {
     return this.options[0].value;
+  }
+
+  toFragment() {
+    return [{ text: this.options[0].value }];
   }
 
   toTextmateString(): string {

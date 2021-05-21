@@ -184,7 +184,7 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
     },
     renderLeafDeps: [snippetSession],
     onBlur: (e, editor, next) => {
-      disposeSnippetSession(snippetSession, setSnippetSession);
+      // disposeSnippetSession(snippetSession, setSnippetSession);
       return next?.(e, editor);
     },
     onBlurDeps: [snippetSession],
@@ -264,27 +264,34 @@ class SnippetSession {
     this._placeholders.sort(Placeholder.compareByIndex);
     this._placeholderRanges = new Map();
     this._placeholderIdx = -1;
-    Transforms.insertText(this._editor, this._snippet.toString(), {
+    Transforms.insertFragment(this._editor, this._snippet.toFragment(), {
       at: this._range.current!,
     });
 
+    let zeroWidthOffset = 0;
     this._placeholders.forEach(placeholder => {
       const placeholderOffset = this._snippet.offset(placeholder);
       const placeholderLen = this._snippet.fullLen(placeholder);
+      const placeholderStartOffset = placeholderOffset + zeroWidthOffset;
+      zeroWidthOffset += 2;
+      const placeholderEndOffset =
+        placeholderOffset + placeholderLen + zeroWidthOffset;
       const anchor =
-        placeholderOffset === 0
+        placeholderStartOffset === 0
           ? range.anchor
           : Editor.after(this._editor, range.anchor, {
-              distance: placeholderOffset,
+              distance: placeholderStartOffset,
               unit: 'character',
             });
+
       const focus =
-        placeholderOffset + placeholderLen === 0
+        placeholderEndOffset === 0
           ? range.anchor
           : Editor.after(this._editor, range.anchor, {
-              distance: placeholderOffset + placeholderLen,
+              distance: placeholderEndOffset,
               unit: 'character',
             });
+
       if (anchor === undefined || focus === undefined) {
         throw new Error(
           'anchor or focus could not be defined for a placeholder'
@@ -308,8 +315,16 @@ class SnippetSession {
 
     if (validMove) {
       const nextPlaceholder = this._placeholders[this._placeholderIdx];
-      const nextRange = this._placeholderRanges!.get(nextPlaceholder)!;
-      Transforms.select(this._editor, nextRange.current!);
+      const nextRange = this._placeholderRanges!.get(nextPlaceholder)!.current!;
+
+      Transforms.select(this._editor, {
+        anchor: Editor.after(this._editor, nextRange.anchor, {
+          unit: 'character',
+        })!,
+        focus: Editor.before(this._editor, nextRange.focus, {
+          unit: 'character',
+        })!,
+      });
 
       if (nextPlaceholder.isFinalTabstop) {
         this.dispose();
