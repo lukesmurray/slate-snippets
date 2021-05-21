@@ -18,6 +18,8 @@ import {
   SnippetParser,
   TextmateSnippet,
 } from './snippetParser/snippetParser';
+import { CompositeSnippetVariableResolver } from './variableResolvers/CompositeSnippetVariableResolver';
+import { TimeBasedVariableResolver } from './variableResolvers/TimeBasedVariableResolver';
 
 /**
  * Is a point at the end of a word
@@ -270,7 +272,10 @@ class SnippetSession {
   private _range?: RangeRef;
 
   constructor(editor: Editor, text: string) {
-    this._snippet = new SnippetParser().parse(text, true, false);
+    this._snippet = new SnippetParser().parse(text, true, true);
+    this._snippet.resolveVariables(
+      new CompositeSnippetVariableResolver([new TimeBasedVariableResolver()])
+    );
     this._editor = editor;
     this._placeholders = this._snippet.placeholders;
     this._placeholderIdx = -1;

@@ -20,6 +20,9 @@ const Editor = () => {
       baz: ' ${1:a}${2:b}${3:c}${4:d} ',
       first: '${1:foo} and the rest of the placeholder',
       fempty: '$1 and the rest of the placeholder',
+      time:
+        '$CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR $CURRENT_HOUR:$CURRENT_MINUTE',
+      none: 'the answer is 42',
     },
   });
 
