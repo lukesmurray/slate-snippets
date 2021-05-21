@@ -1,1 +1,1 @@
-export { useSlatePlaceholdersExtension } from './slatePlaceholdersExtension';
+export { useSlateSnippetsExtension } from './slateSnippetsExtension';

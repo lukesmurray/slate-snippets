@@ -6,18 +6,18 @@ import {
   useSlateState,
   useSlateWithExtensions,
 } from 'use-slate-with-extensions';
-import { useSlatePlaceholdersExtension } from '../.';
+import { useSlateSnippetsExtension } from '../.';
 import './styles.css';
 
 const Editor = () => {
   const [value, onChange] = useSlateState();
 
-  const slatePlaceholderPlugin = useSlatePlaceholdersExtension();
+  const plugin = useSlateSnippetsExtension();
 
   const { getEditableProps, getSlateProps } = useSlateWithExtensions({
     onChange,
     value,
-    extensions: [slatePlaceholderPlugin],
+    extensions: [plugin],
   });
 
   return (
