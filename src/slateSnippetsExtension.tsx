@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import {
   Editor,
   Location,
+  Node,
   Point,
   Range,
   RangeRef,
@@ -56,10 +57,6 @@ const getEditorEndToEndRange = (e: Editor): Range => {
   return { anchor: getEditorStart(e), focus: getEditorEnd(e) };
 };
 
-const isEditorEmpty = (e: Editor) => {
-  return !Editor.string(e, getEditorEndToEndRange(e));
-};
-
 const isSelectionCollapsed = (s: Selection) => {
   return s !== null && Range.isCollapsed(s);
 };
@@ -86,15 +83,6 @@ function disposeSnippetSession(
     setSnippetSession(undefined);
   }
 }
-
-const snippets = {
-  ex: 'This sentence ${1:contains} in ${2:placeholders}',
-  empty: 'for $1 in $2 do { }',
-  bar: 'for ${1:foo} in $2 do { }',
-  baz: ' ${1:a}${2:b}${3:c}${4:d} ',
-  first: '${1:foo} and the rest of the placeholder',
-  fempty: '$1 and the rest of the placeholder',
-};
 
 export const matchesTriggerAndPattern = (
   editor: Editor,
@@ -134,7 +122,22 @@ export const matchesTriggerAndPattern = (
   };
 };
 
-export const useSlateSnippetsExtension = (): SlateExtension => {
+interface useSlateSnippetsExtensionOptions {
+  snippets: Record<string, string>;
+  trigger?: string;
+  placeholderColor?: string;
+  pattern?: string;
+}
+
+export const useSlateSnippetsExtension = (
+  options: useSlateSnippetsExtensionOptions
+): SlateExtension => {
+  const {
+    snippets,
+    trigger = '$',
+    placeholderColor = '#d2f1ff',
+    pattern = '\\S+',
+  } = options;
   // defined if currently inserting a snippet otherwise undefined
   const [snippetSession, setSnippetSession] = useState<
     SnippetSession | undefined
@@ -165,11 +168,11 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
     decorateDeps: [snippetSession],
     renderLeaf: props => {
       if (props.leaf.type === 'PlaceholderDecorationRange') {
-        if (props.leaf.text.length === 0) {
+        if (props.leaf.text.replaceAll('\u200B', '').length === 0) {
           return (
             <span
               style={{
-                background: '#d2f1ff',
+                background: placeholderColor,
                 display: 'inline-block',
                 minWidth: '2px',
               }}
@@ -178,13 +181,15 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
             </span>
           );
         }
-        return <span style={{ background: '#d2f1ff' }}>{props.children}</span>;
+        return (
+          <span style={{ background: placeholderColor }}>{props.children}</span>
+        );
       }
       return undefined;
     },
-    renderLeafDeps: [snippetSession],
+    renderLeafDeps: [snippetSession, placeholderColor],
     onBlur: (e, editor, next) => {
-      // disposeSnippetSession(snippetSession, setSnippetSession);
+      disposeSnippetSession(snippetSession, setSnippetSession);
       return next?.(e, editor);
     },
     onBlurDeps: [snippetSession],
@@ -198,8 +203,8 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
             editor,
             {
               at: cursor,
-              trigger: '$',
-              pattern: '\\S+',
+              trigger: trigger,
+              pattern: pattern,
             }
           );
 
@@ -213,19 +218,21 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
               editor,
               (snippets as any)[beforeMatch[1]]
             );
-            const { done } = session.insert(range);
-            if (!done) {
-              setSnippetSession(session);
-            }
+            Editor.withoutNormalizing(editor, () => {
+              const { done } = session.insert(range);
+              if (!done) {
+                setSnippetSession(session);
+              }
+            });
           }
         }
       }
       next(editor);
     },
-    onChangeDeps: [snippetSession],
+    onChangeDeps: [snippetSession, snippets, trigger, pattern],
     onKeyDown: (e, editor, next) => {
-      if (isHotkey('tab', e as any) || isHotkey('shift+tab', e as any)) {
-        if (snippetSession !== undefined) {
+      if (snippetSession !== undefined) {
+        if (isHotkey('tab', e as any) || isHotkey('shift+tab', e as any)) {
           e.preventDefault();
           const { done } = snippetSession.move(!e.shiftKey);
           if (done) {
@@ -233,12 +240,24 @@ export const useSlateSnippetsExtension = (): SlateExtension => {
           }
         }
       }
-      if (isHotkey('escape', e as any)) {
-        disposeSnippetSession(snippetSession, setSnippetSession);
-      }
       return next?.(e, editor);
     },
     onKeyDownDeps: [snippetSession],
+    normalizeNode: (entry, editor, next) => {
+      const [node, path] = entry;
+      if (snippetSession === undefined && Text.isText(node)) {
+        if (Node.string(node).includes('\u200B')) {
+          Transforms.insertText(
+            editor,
+            Node.string(node).replaceAll('\u200B', ''),
+            { at: path }
+          );
+          return;
+        }
+      }
+      next(entry, editor);
+    },
+    normalizeNodeDeps: [snippetSession],
   };
 };
 

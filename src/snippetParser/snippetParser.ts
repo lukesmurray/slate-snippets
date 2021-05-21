@@ -293,7 +293,10 @@ export class Placeholder extends TransformableMarker {
   }
 
   toFragment() {
-    return [{ text: '\uFEFF' }, ...super.toFragment(), { text: '\uFEFF' }];
+    // surround placeholders with zero width space
+    // https://www.fileformat.info/info/unicode/char/200b/index.htm
+    // in order to maintain rangeRefs
+    return [{ text: '\u200B' }, ...super.toFragment(), { text: '\u200B' }];
   }
 }
 

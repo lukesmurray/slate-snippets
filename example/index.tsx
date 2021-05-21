@@ -12,7 +12,16 @@ import './styles.css';
 const Editor = () => {
   const [value, onChange] = useSlateState();
 
-  const plugin = useSlateSnippetsExtension();
+  const plugin = useSlateSnippetsExtension({
+    snippets: {
+      ex: 'This sentence ${1:contains} in ${2:placeholders}',
+      empty: 'for $1 in $2 do { }',
+      bar: 'for ${1:foo} in $2 do { }',
+      baz: ' ${1:a}${2:b}${3:c}${4:d} ',
+      first: '${1:foo} and the rest of the placeholder',
+      fempty: '$1 and the rest of the placeholder',
+    },
+  });
 
   const { getEditableProps, getSlateProps } = useSlateWithExtensions({
     onChange,
