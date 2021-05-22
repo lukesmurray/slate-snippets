@@ -198,6 +198,10 @@ export abstract class Marker {
     return 0;
   }
 
+  lenFragment(): number {
+    return this.len();
+  }
+
   abstract clone(): Marker;
 }
 
@@ -222,6 +226,9 @@ export class Text extends Marker {
   }
   len(): number {
     return this.value.length;
+  }
+  lenFragment(): number {
+    return this.len();
   }
   clone(): Text {
     return new Text(this.value);
@@ -298,6 +305,10 @@ export class Placeholder extends TransformableMarker {
     // in order to maintain rangeRefs
     return [{ text: '\u200B' }, ...super.toFragment(), { text: '\u200B' }];
   }
+
+  lenFragment(): number {
+    return this.len() + 2;
+  }
 }
 
 export class Choice extends Marker {
@@ -327,6 +338,10 @@ export class Choice extends Marker {
 
   len(): number {
     return this.options[0].len();
+  }
+
+  lenFragment(): number {
+    return this.len();
   }
 
   clone(): Choice {
@@ -562,10 +577,37 @@ export class TextmateSnippet extends Marker {
     return pos;
   }
 
+  offsetFragment(marker: Marker): number {
+    let pos = 0;
+    let found = false;
+    this.walk(candidate => {
+      if (candidate === marker) {
+        found = true;
+        return false;
+      }
+      pos += candidate.lenFragment();
+      return true;
+    });
+
+    if (!found) {
+      return -1;
+    }
+    return pos;
+  }
+
   fullLen(marker: Marker): number {
     let ret = 0;
     walk([marker], marker => {
       ret += marker.len();
+      return true;
+    });
+    return ret;
+  }
+
+  fullLenFragment(marker: Marker): number {
+    let ret = 0;
+    walk([marker], marker => {
+      ret += marker.lenFragment();
       return true;
     });
     return ret;

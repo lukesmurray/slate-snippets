@@ -23,6 +23,8 @@ const Editor = () => {
       time:
         '$CURRENT_DATE/$CURRENT_MONTH/$CURRENT_YEAR $CURRENT_HOUR:$CURRENT_MINUTE',
       none: 'the answer is 42',
+      order: '${2:this} sentence ${1:contains}',
+      blorder: '${2:blah} in ${1:darling} { }',
     },
   });
 

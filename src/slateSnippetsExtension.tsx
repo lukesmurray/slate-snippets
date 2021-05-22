@@ -70,6 +70,14 @@ const getEditorText = (e: Editor, at?: Location | null) => {
   return '';
 };
 
+const isPointAtBlockStart = (e: Editor, point: Point) => {
+  const [_, path] = Editor.above(e, {
+    at: point,
+    match: n => Editor.isBlock(e, n),
+  }) ?? [undefined, undefined];
+  return path !== undefined && Editor.isStart(e, point, path);
+};
+
 const escapeRegExp = (r: string) => {
   return r.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
@@ -292,21 +300,36 @@ class SnippetSession {
       at: this._range.current!,
     });
 
-    let zeroWidthOffset = 0;
     this._placeholders.forEach(placeholder => {
-      const placeholderOffset = this._snippet.offset(placeholder);
-      const placeholderLen = this._snippet.fullLen(placeholder);
-      const placeholderStartOffset = placeholderOffset + zeroWidthOffset;
-      zeroWidthOffset += 2;
-      const placeholderEndOffset =
-        placeholderOffset + placeholderLen + zeroWidthOffset;
-      const anchor =
+      const placeholderOffset = this._snippet.offsetFragment(placeholder);
+      const placeholderLen = this._snippet.fullLenFragment(placeholder);
+      const placeholderStartOffset = placeholderOffset;
+      const placeholderEndOffset = placeholderOffset + placeholderLen;
+
+      let anchor =
         placeholderStartOffset === 0
           ? range.anchor
           : Editor.after(this._editor, range.anchor, {
               distance: placeholderStartOffset,
               unit: 'character',
             });
+
+      // this fixes a bug when the user inserts a snippet which starts with a placeholder
+      // in an empty block .
+      // the block starts with an empty {text: ""} and the range will be inside
+      // the empty text. the placeholder also starts with an empty text {text: "\u200b"}
+      // so the initial empty text is normalized away and the rangeRef is destroyed
+      // we increment by offset so that the rangeRef starts in the placeholder empty
+      // text
+      // TODO(lukemurray): this may not be applicable in generated blocks
+      // we may want to check for the structure `[{text: ""}, {text: "\u200b"}]`
+      // before we increment
+      if (anchor !== undefined && isPointAtBlockStart(this._editor, anchor)) {
+        anchor = Editor.after(this._editor, range.anchor, {
+          distance: 1,
+          unit: 'offset',
+        });
+      }
 
       const focus =
         placeholderEndOffset === 0
@@ -321,6 +344,7 @@ class SnippetSession {
           'anchor or focus could not be defined for a placeholder'
         );
       }
+
       const rangeRef = Editor.rangeRef(this._editor, { anchor, focus });
       this._placeholderRanges!.set(placeholder, rangeRef);
     });
