@@ -6,7 +6,7 @@ import {
   useSlateState,
   useSlateWithExtensions,
 } from 'use-slate-with-extensions';
-import { useSlateSnippetsExtension } from '../.';
+import { TimeBasedVariableResolver, useSlateSnippetsExtension } from '../.';
 import './styles.css';
 
 const Editor = () => {
@@ -30,6 +30,7 @@ const Editor = () => {
       fmulti: 'this snippet\n${1:contains} multiple\nlines',
       ffmulti: 'this snippet\n\n\n${1:contains} multiple\nlines',
     },
+    variableResolvers: [new TimeBasedVariableResolver()],
   });
 
   const { getEditableProps, getSlateProps } = useSlateWithExtensions({

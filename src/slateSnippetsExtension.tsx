@@ -17,9 +17,9 @@ import {
   Placeholder,
   SnippetParser,
   TextmateSnippet,
+  VariableResolver,
 } from './snippetParser/snippetParser';
 import { CompositeSnippetVariableResolver } from './variableResolvers/CompositeSnippetVariableResolver';
-import { TimeBasedVariableResolver } from './variableResolvers/TimeBasedVariableResolver';
 
 /**
  * Is a point at the end of a word
@@ -137,6 +137,7 @@ interface useSlateSnippetsExtensionOptions {
   trigger?: string;
   placeholderColor?: string;
   pattern?: string;
+  variableResolvers?: VariableResolver[];
 }
 
 export const useSlateSnippetsExtension = (
@@ -147,6 +148,7 @@ export const useSlateSnippetsExtension = (
     trigger = '$',
     placeholderColor = '#d2f1ff',
     pattern = '\\S+',
+    variableResolvers = [],
   } = options;
   // defined if currently inserting a snippet otherwise undefined
   const [snippetSession, setSnippetSession] = useState<
@@ -226,7 +228,8 @@ export const useSlateSnippetsExtension = (
           ) {
             const session = new SnippetSession(
               editor,
-              (snippets as any)[beforeMatch[1]]
+              (snippets as any)[beforeMatch[1]],
+              variableResolvers
             );
             Editor.withoutNormalizing(editor, () => {
               const { done } = session.insert(range);
@@ -239,7 +242,13 @@ export const useSlateSnippetsExtension = (
       }
       next(editor);
     },
-    onChangeDeps: [snippetSession, snippets, trigger, pattern],
+    onChangeDeps: [
+      snippetSession,
+      snippets,
+      trigger,
+      pattern,
+      variableResolvers,
+    ],
     onKeyDown: (e, editor, next) => {
       if (snippetSession !== undefined) {
         if (isHotkey('tab', e as any) || isHotkey('shift+tab', e as any)) {
@@ -279,10 +288,10 @@ class SnippetSession {
   private _editor: Editor;
   private _range?: RangeRef;
 
-  constructor(editor: Editor, text: string) {
+  constructor(editor: Editor, text: string, resolvers: VariableResolver[]) {
     this._snippet = new SnippetParser().parse(text, true, true);
     this._snippet.resolveVariables(
-      new CompositeSnippetVariableResolver([new TimeBasedVariableResolver()])
+      new CompositeSnippetVariableResolver([...resolvers])
     );
     this._editor = editor;
     this._placeholders = this._snippet.placeholders;
