@@ -24,7 +24,7 @@ import { CompositeSnippetVariableResolver } from './variableResolvers/CompositeS
 /**
  * Is a point at the end of a word
  */
-export const isPointAtWordEnd = (editor: Editor, point: Point) => {
+const isPointAtWordEnd = (editor: Editor, point: Point) => {
   const AFTER_MATCH_REGEX = /^(\s|$)/;
 
   // Point after point
@@ -94,7 +94,7 @@ function disposeSnippetSession(
   }
 }
 
-export const matchesTriggerAndPattern = (
+const matchesTriggerAndPattern = (
   editor: Editor,
   { at, trigger, pattern }: { at: Point; trigger: string; pattern: string }
 ) => {
@@ -132,7 +132,7 @@ export const matchesTriggerAndPattern = (
   };
 };
 
-interface useSlateSnippetsExtensionOptions {
+export interface useSlateSnippetsExtensionOptions {
   snippets: Record<string, string>;
   trigger?: string;
   placeholderColor?: string;
