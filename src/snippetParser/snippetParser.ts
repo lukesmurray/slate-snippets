@@ -5,7 +5,7 @@
 
 // from https://github.com/microsoft/vscode/blob/main/src/vs/editor/contrib/snippet/snippetParser.ts
 
-import { Descendant } from 'slate';
+import { Descendant, Element } from 'slate';
 import { CharCode } from './charCode';
 
 export const enum TokenType {
@@ -186,10 +186,30 @@ export abstract class Marker {
   }
 
   toFragment(): Descendant[] {
-    return this.children.reduce((prev, cur) => {
-      prev.push(...cur.toFragment());
+    const multiFragment = this.children.reduce((prev, cur) => {
+      prev.push(...cur.toMultiLineFragment());
       return prev;
-    }, [] as Descendant[]);
+    }, [] as (Descendant | 'line-break')[]);
+
+    const fragment: Descendant[] = [];
+    let currentElementChildren = fragment;
+    for (let descendant of multiFragment) {
+      if (descendant === 'line-break') {
+        const element: Element = { children: [{ text: '' }] };
+        fragment.push(element);
+        currentElementChildren = element.children;
+      } else {
+        currentElementChildren.push(descendant);
+      }
+    }
+    return fragment;
+  }
+
+  toMultiLineFragment(): (Descendant | 'line-break')[] {
+    return this.children.reduce((prev, cur) => {
+      prev.push(...cur.toMultiLineFragment());
+      return prev;
+    }, [] as (Descendant | 'line-break')[]);
   }
 
   abstract toTextmateString(): string;
@@ -217,8 +237,24 @@ export class Text extends Marker {
     return this.value;
   }
 
-  toFragment() {
-    return [{ text: this.value }];
+  toMultiLineFragment(): (Descendant | 'line-break')[] {
+    // when we split by new line consecutive new lines and newlines at the start
+    // or end of the value turn into empty strings in the resulting array. we
+    // don't add text descendants for these empty strings, we just represent
+    // them with a line break. That's why we check v.length before pushing
+    // text.
+    return this.value.split(/\r?\n/).flatMap((v, i, a) => {
+      const isNotLast = i < a.length - 1;
+      const result: (Descendant | 'line-break')[] = [];
+      if (v.length > 0) {
+        result.push({ text: v });
+      }
+      if (isNotLast) {
+        result.push('line-break');
+      }
+
+      return result;
+    });
   }
 
   toTextmateString(): string {
@@ -299,11 +335,15 @@ export class Placeholder extends TransformableMarker {
     return ret;
   }
 
-  toFragment() {
+  toMultiLineFragment(): (Descendant | 'line-break')[] {
     // surround placeholders with zero width space
     // https://www.fileformat.info/info/unicode/char/200b/index.htm
     // in order to maintain rangeRefs
-    return [{ text: '\u200B' }, ...super.toFragment(), { text: '\u200B' }];
+    return [
+      { text: '\u200B' },
+      ...super.toMultiLineFragment(),
+      { text: '\u200B' },
+    ];
   }
 
   lenFragment(): number {
@@ -326,7 +366,7 @@ export class Choice extends Marker {
     return this.options[0].value;
   }
 
-  toFragment() {
+  toMultiLineFragment(): (Descendant | 'line-break')[] {
     return [{ text: this.options[0].value }];
   }
 

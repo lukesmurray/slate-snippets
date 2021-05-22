@@ -25,6 +25,10 @@ const Editor = () => {
       none: 'the answer is 42',
       order: '${2:this} sentence ${1:contains}',
       blorder: '${2:blah} in ${1:darling} { }',
+      multi: 'this snippet\ncontains multiple\nlines',
+      smulti: '${3:this} snippet${0}\ncontains ${2:foo} ${1:bar}\nlines',
+      fmulti: 'this snippet\n${1:contains} multiple\nlines',
+      ffmulti: 'this snippet\n\n\n${1:contains} multiple\nlines',
     },
   });
 

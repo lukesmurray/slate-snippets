@@ -325,7 +325,7 @@ class SnippetSession {
       // we may want to check for the structure `[{text: ""}, {text: "\u200b"}]`
       // before we increment
       if (anchor !== undefined && isPointAtBlockStart(this._editor, anchor)) {
-        anchor = Editor.after(this._editor, range.anchor, {
+        anchor = Editor.after(this._editor, anchor, {
           distance: 1,
           unit: 'offset',
         });
