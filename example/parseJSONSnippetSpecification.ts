@@ -32,6 +32,7 @@ export const parseJSONSnippetSpecification = (
     }
     return result;
   } catch (e) {
+    console.log(e);
     return undefined;
   }
 };

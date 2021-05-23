@@ -70,6 +70,38 @@ const App = () => {
   "Insert multiple lines": {
     "prefix": "placeholders",
     "body": ["this snippet $0", "\${1:contains} a couple", "lines of text!"]
+  },
+  "ROS": {
+    "prefix": "ros",
+    "body": [
+       "Constitutional: \${1:No fever, no chills}",
+       "Head / Eyes: \${2:No diplopia}",
+       "ENT: \${3:no earache}",
+       "Resp: \${4:No cough}",
+       "Cards: \${5:No chest pain}",
+       "Abd: \${6:No abdominal pain}",
+       "Flank: \${7:No dysuria}",
+       "Skin: \${8:No rash}",
+       "Ext: \${9:No back pain}",
+       "Neuro: \${10:No headache}",
+       "Psych: \${11:No depression}"
+    ]
+  },
+  "HPI": {
+    "prefix": "hpi",
+    "body": [
+      "41 y/o F \$1",
+      "",
+      "",
+      "Timing: $2",
+      "Quality: $3",
+      "Severity: $4",
+      "Duration: $5",
+      "Location: $6",
+      "Context: $7",
+      "Modifying Factors: $8",
+      "Associated Symptoms: $9"
+    ]
   }
 }`);
 

@@ -239,6 +239,17 @@ export const useSlateSnippetsExtension = (
             });
           }
         }
+      } else {
+        const { selection } = editor;
+        if (selection !== null && selection.focus) {
+          if (
+            !snippetSession.placeholderRanges.some(placeholderRange =>
+              isRangeContained(placeholderRange, selection)
+            )
+          ) {
+            disposeSnippetSession(snippetSession, setSnippetSession);
+          }
+        }
       }
       next(editor);
     },
