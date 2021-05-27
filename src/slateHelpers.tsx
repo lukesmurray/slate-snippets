@@ -38,7 +38,7 @@ const getEditorEndToEndRange = (e: Editor): Range => {
   return { anchor: getEditorStart(e), focus: getEditorEnd(e) };
 };
 
-export const isSelectionCollapsed = (s: Selection) => {
+export const isSelectionCollapsed = (s: Selection): s is Selection => {
   return s !== null && Range.isCollapsed(s);
 };
 

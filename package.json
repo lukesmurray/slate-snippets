@@ -33,7 +33,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "slate-snippets",
+  "name": "@slate-extensions/slate-snippets",
   "author": "Luke Murray",
   "module": "dist/slate-snippets.esm.js",
   "size-limit": [

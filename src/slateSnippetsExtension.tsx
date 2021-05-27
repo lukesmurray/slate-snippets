@@ -95,8 +95,8 @@ export const useSlateSnippetsExtension = (
     onChange: (editor, next) => {
       if (snippetSession === undefined) {
         const { selection } = editor;
-        if (selection && isSelectionCollapsed(selection)) {
-          const cursor = Range.start(editor.selection!);
+        if (isSelectionCollapsed(selection)) {
+          const cursor = Range.start(selection!);
 
           const { range, match: beforeMatch } = matchesTriggerAndPattern(
             editor,
