@@ -2,7 +2,8 @@ import isHotkey from 'is-hotkey';
 import React, { useCallback, useState } from 'react';
 import { Editor, Node, Range, Text, Transforms } from 'slate';
 import { SlateExtension } from 'use-slate-with-extensions';
-import { PlaceholderDecorationRange } from './customTypes';
+import { PlaceholderDecoration } from './components/PlaceholderDecoration';
+import { SnippetReadonlyText } from './components/SnippetReadonlyText';
 import {
   isPointAtWordEnd,
   isRangeContained,
@@ -43,45 +44,56 @@ export const useSlateSnippetsExtension = (
   }, [snippetSession]);
 
   return {
+    isVoid: (element, editor, next) => {
+      if (element.type === 'SnippetReadonlyText') {
+        return true;
+      }
+
+      return next(element, editor);
+    },
+    isVoidDeps: [],
+    isInline: (element, editor, next) => {
+      if (element.type === 'SnippetReadonlyText') {
+        return true;
+      }
+      return next(element, editor);
+    },
+    isInlineDeps: [],
     decorate: ([node, path], editor) => {
       if (snippetSession !== undefined && Text.isText(node)) {
         const [start, end] = Editor.edges(editor, path);
         const nodeRange = { anchor: start, focus: end };
 
         const placeholderRanges = snippetSession.placeholderRanges
+          .map(placeholderRange =>
+            snippetSession.transformPlaceholderRangeToSelectionRange(
+              placeholderRange
+            )
+          )
           .filter(placeholderRange =>
             isRangeContained(nodeRange, placeholderRange)
-          )
-          .map(r => {
-            const decorationRange: PlaceholderDecorationRange = {
-              ...r,
-              type: 'PlaceholderDecorationRange',
-            };
-            return decorationRange;
-          });
+          );
 
         return placeholderRanges;
       }
       return undefined;
     },
     decorateDeps: [snippetSession],
+    renderElement: props => {
+      const { element } = props;
+      if (element.type === 'SnippetReadonlyText') {
+        return <SnippetReadonlyText {...(props as any)} />;
+      }
+      return undefined;
+    },
+    renderElementDeps: [],
     renderLeaf: props => {
       if (props.leaf.type === 'PlaceholderDecorationRange') {
-        if (props.leaf.text.replaceAll('\u200B', '').length === 0) {
-          return (
-            <span
-              style={{
-                background: placeholderColor,
-                display: 'inline-block',
-                minWidth: '2px',
-              }}
-            >
-              {props.children}
-            </span>
-          );
-        }
         return (
-          <span style={{ background: placeholderColor }}>{props.children}</span>
+          <PlaceholderDecoration
+            {...(props as any)}
+            placeholderColor={placeholderColor}
+          />
         );
       }
       return undefined;
@@ -167,7 +179,7 @@ export const useSlateSnippetsExtension = (
           Transforms.insertText(
             editor,
             Node.string(node).replaceAll('\u200B', ''),
-            { at: path }
+            { at: path, voids: true }
           );
           return;
         }

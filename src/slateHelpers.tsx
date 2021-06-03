@@ -42,9 +42,9 @@ export const isSelectionCollapsed = (s: Selection): s is Selection => {
   return s !== null && Range.isCollapsed(s);
 };
 
-const getEditorText = (e: Editor, at?: Location | null) => {
+export const getEditorText = (e: Editor, at?: Location | null) => {
   if (at !== null && at !== undefined) {
-    return Editor.string(e, at);
+    return Editor.string(e, at, { voids: true });
   }
   return '';
 };
@@ -53,6 +53,7 @@ export const isPointAtBlockStart = (e: Editor, point: Point) => {
   const [_, path] = Editor.above(e, {
     at: point,
     match: n => Editor.isBlock(e, n),
+    voids: true,
   }) ?? [undefined, undefined];
   return path !== undefined && Editor.isStart(e, point, path);
 };
@@ -66,7 +67,7 @@ export const matchesTriggerAndPattern = (
   { at, trigger, pattern }: { at: Point; trigger: string; pattern: string }
 ) => {
   // Point at the start of line
-  const lineStart = Editor.before(editor, at, { unit: 'line' });
+  const lineStart = Editor.before(editor, at, { unit: 'line', voids: true });
 
   // Range from before to start
   const beforeRange = lineStart && Editor.range(editor, lineStart, at);
@@ -87,6 +88,7 @@ export const matchesTriggerAndPattern = (
     ? Editor.before(editor, at, {
         unit: 'character',
         distance: match[1].length + trigger.length,
+        voids: true,
       })
     : null;
 
