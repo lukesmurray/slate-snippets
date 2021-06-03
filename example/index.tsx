@@ -60,15 +60,15 @@ const App = () => {
     "description": "You can add your own variable resolutions!"
   },
   "Insert Multiple Tab Stops": {
-    "prefix": "tabstops",
+    "prefix": "tab",
     "body": "This $1 snippet $2 contains multiple tab $3 stops"
   },
   "Insert Placeholders in any order": {
-    "prefix": "placeholders",
-    "body": "This \${2:snippet} \${1:contains} multiple \${3:placeholders}"
+    "prefix": "phs",
+    "body": "This \${1:snippet} \${2:contains}"
   },
   "Insert multiple lines": {
-    "prefix": "placeholders",
+    "prefix": "mls",
     "body": ["this snippet $0", "\${1:contains} a couple", "lines of text!"]
   },
   "ROS": {

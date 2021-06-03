@@ -1,4 +1,5 @@
 import { Editor, Range, RangeRef, Transforms } from 'slate';
+import { PlaceholderDecorationRange } from './customTypes';
 import { isPointAtBlockStart } from './slateHelpers';
 import {
   Placeholder,
@@ -33,8 +34,10 @@ export class SnippetSession {
     this._placeholders.sort(Placeholder.compareByIndex);
     this._placeholderRanges = new Map();
     this._placeholderIdx = -1;
-    Transforms.insertFragment(this._editor, this._snippet.toFragment(), {
+    const fragment = this._snippet.toFragment();
+    Transforms.insertFragment(this._editor, fragment, {
       at: this._range.current!,
+      voids: true,
     });
 
     this._placeholders.forEach(placeholder => {
@@ -49,6 +52,7 @@ export class SnippetSession {
           : Editor.after(this._editor, range.anchor, {
               distance: placeholderStartOffset,
               unit: 'character',
+              voids: true,
             });
 
       // this fixes a bug when the user inserts a snippet which starts with a placeholder
@@ -65,6 +69,7 @@ export class SnippetSession {
         anchor = Editor.after(this._editor, anchor, {
           distance: 1,
           unit: 'offset',
+          voids: true,
         });
       }
 
@@ -74,6 +79,7 @@ export class SnippetSession {
           : Editor.after(this._editor, range.anchor, {
               distance: placeholderEndOffset,
               unit: 'character',
+              voids: true,
             });
 
       if (anchor === undefined || focus === undefined) {
@@ -102,14 +108,10 @@ export class SnippetSession {
       const nextPlaceholder = this._placeholders[this._placeholderIdx];
       const nextRange = this._placeholderRanges!.get(nextPlaceholder)!.current!;
 
-      Transforms.select(this._editor, {
-        anchor: Editor.after(this._editor, nextRange.anchor, {
-          unit: 'character',
-        })!,
-        focus: Editor.before(this._editor, nextRange.focus, {
-          unit: 'character',
-        })!,
-      });
+      Transforms.select(
+        this._editor,
+        this.transformPlaceholderRangeToSelectionRange(nextRange)
+      );
 
       if (nextPlaceholder.isFinalTabstop) {
         this.dispose();
@@ -120,19 +122,42 @@ export class SnippetSession {
     return { done: false };
   }
 
+  public transformPlaceholderRangeToSelectionRange<T extends Range>(
+    nextRange: T
+  ): T {
+    return {
+      ...nextRange,
+      anchor: Editor.after(this._editor, nextRange.anchor, {
+        unit: 'character',
+        voids: true,
+      })!,
+      focus: Editor.before(this._editor, nextRange.focus, {
+        unit: 'character',
+        voids: true,
+      })!,
+    };
+  }
+
   public dispose() {
     for (let rangeRef of this._placeholderRanges?.values() ?? []) {
       rangeRef.unref();
     }
   }
 
-  public get placeholderRanges() {
+  public get placeholderRanges(): PlaceholderDecorationRange[] {
     const ranges = this._placeholders
       .map(placeholder => {
         const rangeRef = this._placeholderRanges!.get(placeholder);
-        return rangeRef;
+        return { rangeRef, placeholder };
       })
-      .map(rangeRef => rangeRef!.current!);
+      .map(({ rangeRef, placeholder }) => {
+        const decorationRange: PlaceholderDecorationRange = {
+          ...rangeRef!.current!,
+          type: 'PlaceholderDecorationRange',
+          isFinalTabStop: placeholder.isFinalTabstop,
+        };
+        return decorationRange;
+      });
     return ranges;
   }
 }

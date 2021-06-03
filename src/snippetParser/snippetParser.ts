@@ -247,7 +247,18 @@ export class Text extends Marker {
       const isNotLast = i < a.length - 1;
       const result: (Descendant | 'line-break')[] = [];
       if (v.length > 0) {
-        result.push({ text: v });
+        if (
+          this.parent instanceof Placeholder ||
+          this.parent instanceof Choice
+        ) {
+          result.push({ text: v });
+        } else {
+          result.push({
+            children: [{ text: v }],
+            type: 'SnippetReadonlyText',
+            label: v,
+          });
+        }
       }
       if (isNotLast) {
         result.push('line-break');
